@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <ImageView
+        android:background="@mipmap/choose"
+        android:id="@+id/phone_photo"
+        android:layout_width="500px"
+        android:layout_height="500px"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"></ImageView>
+
+    <EditText
+        android:hint="电话号码（必填）"
+        android:layout_marginLeft="50dp"
+        android:inputType="phone"
+        android:maxLength="11"
+        android:id="@+id/phone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/phone_photo"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"></EditText>
+
+    <EditText
+        android:hint="显示名称（可以不填）"
+        android:layout_marginLeft="50dp"
+        android:layout_below="@+id/phone"
+        android:maxLength="3"
+        android:id="@+id/custom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"></EditText>
+
+</RelativeLayout>
