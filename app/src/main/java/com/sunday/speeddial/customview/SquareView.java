@@ -5,7 +5,7 @@ import android.util.AttributeSet;
 import android.widget.RelativeLayout;
 
 /**
- * Created by Administrator on 2018/8/5.
+ * Created by hshande on 2018/8/5.
  */
 public class SquareView extends RelativeLayout {
 

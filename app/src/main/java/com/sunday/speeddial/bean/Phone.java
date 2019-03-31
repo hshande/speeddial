@@ -3,7 +3,7 @@ package com.sunday.speeddial.bean;
 import org.litepal.crud.DataSupport;
 
 /**
- * Created by Administrator on 2018/8/5.
+ * Created by hshande on 2018/8/5.
  */
 
 public class Phone extends DataSupport {
