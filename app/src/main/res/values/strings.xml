@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">快速拨号</string>
     <string name="action_settings">编辑</string>
+    <string name="action_export">导出</string>
+    <string name="action_import">导入</string>
+    <string name="action_handler_pic">处理图片</string>
 </resources>

@@ -19,6 +19,7 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -37,12 +38,14 @@ import com.sunday.speeddial.bean.Phone;
 
 import org.litepal.crud.DataSupport;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -86,9 +89,11 @@ public class PhoneEditActivity extends AppCompatActivity {
     }
 
     private AlertDialog dialog = null;
+    private AlertDialog deleteDialog = null;
     private TextView phoneView = null;
     private TextView nameView = null;
     private ImageView imageView = null;
+    private Button delView = null;
 
     private void showDialog() {
 
@@ -100,6 +105,8 @@ public class PhoneEditActivity extends AppCompatActivity {
         phoneView = layout.findViewById(R.id.phone);
         nameView = layout.findViewById(R.id.custom);
         imageView = layout.findViewById(R.id.phone_photo);
+        delView = layout.findViewById(R.id.del);
+        delView.setVisibility(View.GONE);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -143,6 +150,11 @@ public class PhoneEditActivity extends AppCompatActivity {
                         }
                         String realPath = writeFileByBitmap2(bitmap);
                         phoneBean.setPhoto(realPath);
+
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.JPEG,100,stream);
+                        byte[] bytes = stream.toByteArray();
+                        phoneBean.setPhotoBase64(Base64.encodeToString(bytes, Base64.DEFAULT));
                     }
                 }
                 boolean save = phoneBean.save();
@@ -156,6 +168,43 @@ public class PhoneEditActivity extends AppCompatActivity {
         });
     }
 
+    private void showDeleteDialog(Phone phoneBean) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("是否确定删除");
+        //确认按钮
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                List<Phone> phoneList = phoneAdapter.getPhoneList();
+                if(phoneList == null){
+
+                    deleteDialogClose();
+                    return;
+                }
+                int delete = phoneBean.delete();
+                if(delete > 0){
+                    boolean remove = phoneList.remove(phoneBean);
+                    if (remove) {
+                        phoneAdapter.notifyDataSetChanged();
+                    }
+                }
+                deleteDialogClose();
+            }
+        });
+        //取消
+        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface arg0, int arg1) {
+                deleteDialogClose();
+            }
+        });
+        deleteDialog = builder.create();
+        deleteDialog.setCancelable(false);
+        deleteDialog.show();
+    }
+
     public void showDialog(final Phone phoneBean) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -165,13 +214,24 @@ public class PhoneEditActivity extends AppCompatActivity {
 
         phoneView = layout.findViewById(R.id.phone);
         nameView = layout.findViewById(R.id.custom);
+        delView = layout.findViewById(R.id.del);
+        delView.setVisibility(View.VISIBLE);
         phoneView.setText(phoneBean.getPhone());
         nameView.setText(phoneBean.getName());
         imageView = layout.findViewById(R.id.phone_photo);
-        String photo = phoneBean.getPhoto();
+        String photo = phoneBean.getPhotoBase64();
         if (photo != null && !photo.isEmpty()) {
-            imageView.setImageURI(Uri.fromFile(new File(photo)));
+            String base64 =  photo;
+            byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            imageView.setImageBitmap(decodedByte);
         }
+        delView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+              showDeleteDialog(phoneBean);
+            }
+        });
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -220,6 +280,11 @@ public class PhoneEditActivity extends AppCompatActivity {
                         }
                         String realPath = writeFileByBitmap2(bitmap);
                         phoneBean.setPhoto(realPath);
+
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.JPEG,100,stream);
+                        byte[] bytes = stream.toByteArray();
+                        phoneBean.setPhotoBase64(Base64.encodeToString(bytes, Base64.DEFAULT));
                     }
                 }
                 int update = phoneBean.update(phoneBean.getId());
@@ -238,7 +303,16 @@ public class PhoneEditActivity extends AppCompatActivity {
             dialog = null;
             phoneView = null;
             imageView = null;
+            delView = null;
         }
+    }
+
+    private void deleteDialogClose() {
+        if (deleteDialog != null) {
+            deleteDialog.cancel();
+            deleteDialog = null;
+        }
+        dialogClose();
     }
 
     private void bindView() {
@@ -334,27 +408,27 @@ public class PhoneEditActivity extends AppCompatActivity {
      */
     public static String writeFileByBitmap2(Bitmap bitmap) {
         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + IMAGE_FILE_LOCATION_APP;//手机设置的存储位置
-        File file = new File(path);
+//        File file = new File(path);
         String realPath = System.currentTimeMillis() + ".png";
-        File imageFile = new File(file, realPath);
+//        File imageFile = new File(file, realPath);
 
 
-        if (!file.exists()) {
-            file.mkdirs();
-        }
-        try {
-            imageFile.createNewFile();
-            FileOutputStream outputStream = new FileOutputStream(imageFile);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 90, outputStream);
-            outputStream.flush();
-            outputStream.close();
+//        if (!file.exists()) {
+//            file.mkdirs();
+//        }
+//        try {
+//            imageFile.createNewFile();
+//            FileOutputStream outputStream = new FileOutputStream(imageFile);
+//            bitmap.compress(Bitmap.CompressFormat.PNG, 90, outputStream);
+//            outputStream.flush();
+//            outputStream.close();
             return path + "/" + realPath;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
     }
 
     private DefaultItemTouchHelpCallback.OnItemTouchCallbackListener onItemTouchCallbackListener = new DefaultItemTouchHelpCallback.OnItemTouchCallbackListener() {

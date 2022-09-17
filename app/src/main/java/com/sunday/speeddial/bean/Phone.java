@@ -29,9 +29,22 @@ public class Phone extends DataSupport {
     private String photo;
 
     /**
+     * 照片
+     */
+    private String photoBase64;
+
+    /**
      * 排序
      */
     private int sort;
+
+    public String getPhotoBase64() {
+        return photoBase64;
+    }
+
+    public void setPhotoBase64(String photoBase64) {
+        this.photoBase64 = photoBase64;
+    }
 
     public int getId() {
         return id;

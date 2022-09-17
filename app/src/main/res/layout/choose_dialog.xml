@@ -4,35 +4,57 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <ImageView
-        android:background="@mipmap/choose"
-        android:id="@+id/phone_photo"
-        android:layout_width="500px"
-        android:layout_height="500px"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"></ImageView>
-
-    <EditText
-        android:hint="电话号码（必填）"
-        android:layout_marginLeft="50dp"
-        android:inputType="phone"
-        android:maxLength="11"
-        android:id="@+id/phone"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/phone_photo"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"></EditText>
+        android:layout_height="match_parent">
 
-    <EditText
-        android:hint="显示名称（可以不填）"
-        android:layout_marginLeft="50dp"
-        android:layout_below="@+id/phone"
-        android:maxLength="3"
-        android:id="@+id/custom"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"></EditText>
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/phone_photo"
+                android:layout_width="500px"
+                android:layout_height="500px"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="20dp"
+                android:background="@mipmap/choose"></ImageView>
+
+            <EditText
+                android:id="@+id/phone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/phone_photo"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="50dp"
+                android:layout_marginTop="20dp"
+                android:hint="电话号码（必填）"
+                android:inputType="phone"
+                android:maxLength="11"></EditText>
+
+            <EditText
+                android:id="@+id/custom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/phone"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="50dp"
+                android:layout_marginTop="20dp"
+                android:hint="显示名称（可以不填）"
+                android:maxLength="3"></EditText>
+
+            <Button
+                android:visibility="gone"
+                android:id="@+id/del"
+                android:layout_centerInParent="true"
+                android:layout_below="@+id/custom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="删除"
+                ></Button>
+        </RelativeLayout>
+
+    </ScrollView>
+
 
 </RelativeLayout>

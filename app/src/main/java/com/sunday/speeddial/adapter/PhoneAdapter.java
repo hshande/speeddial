@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -74,11 +75,18 @@ public class PhoneAdapter extends RecyclerView.Adapter<PhoneAdapter.MyViewHolder
         }
 
         final Phone phoneBean = phoneList.get(position);
-        String photo = phoneBean.getPhoto();
+        String photo = phoneBean.getPhotoBase64();
         String name = phoneBean.getName();
         if (photo != null && !photo.isEmpty()) {
+//            "data:image/jpg;base64," +
+            String base64 =  photo;
+            byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+
             try {
-                holder.iv.setImageURI(Uri.fromFile(new File(photo)));
+                holder.iv.setImageBitmap(decodedByte);
+//                holder.iv.setImageURI(Uri.fromFile(new File(photo)));
                 holder.iv.setVisibility(View.VISIBLE);
             } catch (Exception e) {
                 holder.tv.setText(String.valueOf(position + 1));

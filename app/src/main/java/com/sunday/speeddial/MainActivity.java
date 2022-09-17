@@ -1,9 +1,14 @@
 package com.sunday.speeddial;
 
 import android.Manifest;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -11,16 +16,34 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
+import android.util.Base64;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
+import com.google.gson.reflect.TypeToken;
 import com.sunday.speeddial.adapter.PhoneAdapter;
 import com.sunday.speeddial.bean.Phone;
+import com.sunday.speeddial.utils.GsonUtils;
 import com.sunday.speeddial.view.PhoneEditActivity;
 
+import org.apache.commons.io.FileUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.litepal.crud.DataSupport;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -121,12 +144,110 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+
             PhoneEditActivity.startAction(MainActivity.this);
+        } else if (id == R.id.action_export) {
+
+            exportFile();
+        } else if (id == R.id.action_import) {
+
+            importFile();
         }
+//        else if (id == R.id.action_handler_pic) {
+//
+//            List<Phone> phoneList = DataSupport.order("sort asc").find(Phone.class);
+//            if (phoneList != null && phoneList.size() > 0) {
+//                showToast("共"+phoneList.size());
+//                int index = 0;
+//                List<Phone> updateList = new ArrayList<>();
+//                for (Phone phone : phoneList) {
+//                    index ++;
+//                    String photo = phone.getPhoto();
+//                    if (TextUtils.isEmpty(photo)) {
+//
+//                        continue;
+//                    }
+//                    Bitmap bitmap = null;
+//                    try {
+//                        showToast("开始处理"+index);
+//                        bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), Uri.fromFile(new File(photo)));
+//                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+//                        byte[] bytes = stream.toByteArray();
+//                        phone.setPhotoBase64(Base64.encodeToString(bytes, Base64.DEFAULT));
+//                        updateList.add(phone);
+//                    } catch (IOException e) {
+//                        continue;
+//                    }
+//                }
+//                if (updateList.size() > 0) {
+//
+//                    index  = 0;
+//
+//                    for (Phone phone : updateList) {
+//                        index ++;
+//                        showToast("开始更新"+index);
+//                        phone.update(phone.getId());
+//                    }
+//                }
+//            }
+//        }
 
         return super.onOptionsItemSelected(item);
     }
+    private static final String IMAGE_FILE_LOCATION_APP = "/sunday/speeddial";
+    private void exportFile() {
 
+        // 判断sd卡是否存在
+        boolean hasSDCard = Environment.getExternalStorageState().equals(
+                Environment.MEDIA_MOUNTED);
+        if (!hasSDCard) {
+
+            showToast("SD卡不存在");
+            return;
+        }
+
+        List<Phone> phoneList = DataSupport.order("sort asc").find(Phone.class);
+        if (phoneList == null || phoneList.size() == 0) {
+
+            showToast("没有数据");
+            return;
+        }
+        String jsonStr = GsonUtils.getJsonStr(phoneList);
+        String fileName = "speeddial" + System.currentTimeMillis() + ".json";
+        String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() +IMAGE_FILE_LOCATION_APP + File.separator + fileName;
+        File file = new File(filePath);
+        if (file.exists()) {
+            file.delete();
+        }
+        FileOutputStream outStream = null;
+        try {
+            outStream = new FileOutputStream(file);
+            outStream.write(jsonStr.getBytes());
+            outStream.close();
+            file.createNewFile();
+        } catch (FileNotFoundException e) {
+            showToast("导出失败");
+            return;
+        } catch (IOException e) {
+            showToast("导出失败");
+            return;
+        }
+        showToast("导出成功"+filePath);
+    }
+
+    private void importFile() {
+
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");      //   /*/ 此处是任意类型任意后缀
+        //intent.setType(“audio/*”) //选择音频
+
+        //intent.setType(“video/*”) //选择视频 （mp4 3gp 是android支持的视频格式）
+
+        //intent.setType(“video/*;image/*”)//同时选择视频和图片
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(intent, 10002);
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -168,6 +289,96 @@ public class MainActivity extends AppCompatActivity {
 //            Bundle bundle = data.getExtras();
 //            List<Phone> dataList = (List<Phone>) bundle.getSerializable("dataList");
 //            refresh(dataList);
+        }
+        if (requestCode == 10002) {
+            File file = null;
+            Uri uri = null;
+            if(data != null){
+
+                uri = data.getData();
+            }
+            if (uri != null) {
+                if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
+                    file = new File(uri.getPath());
+                } else if (uri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
+                    //把文件复制到沙盒目录
+                    ContentResolver contentResolver = getContentResolver();
+                    String displayName = System.currentTimeMillis() + Math.round((Math.random() + 1) * 1000)
+                            + "." + MimeTypeMap.getSingleton().getExtensionFromMimeType(contentResolver.getType(uri));
+
+                    try {
+                        InputStream is = contentResolver.openInputStream(uri);
+                        File cache = new File(getCacheDir().getAbsolutePath(), displayName);
+                        FileOutputStream fos = new FileOutputStream(cache);
+                        FileUtils.copyInputStreamToFile(is, cache);
+                        file = cache;
+                        fos.close();
+                        is.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (file == null) {
+                    showToast("文件地址未找到");
+                    return;
+                }
+                InputStreamReader isr = null;
+                try {
+                    isr = new InputStreamReader(new FileInputStream(file), "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    showToast("文件地址未找到");
+                    return;
+                } catch (FileNotFoundException e) {
+                    showToast("文件地址未找到");
+                    return;
+                }
+                BufferedReader br = new BufferedReader(isr);
+                String str = "";
+                String mimeTypeLine = null;
+
+                while (true) {
+                    try {
+                        if (!((mimeTypeLine = br.readLine()) != null)) break;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    str = str + mimeTypeLine;
+                }
+                try {
+                    List<Phone> list = GsonUtils.jsonToBean(str, new TypeToken<List<Phone>>() {
+                    }.getType());
+                    if (list == null || list.size() == 0) {
+
+                        showToast("无数据");
+                        return;
+                    }
+                    for (Phone phone : list) {
+
+                        Phone phoneBean = new Phone();
+                        phoneBean.setPhone(phone.getPhone());
+                        phoneBean.setName(phone.getName());
+                        phoneBean.setSort(phone.getSort());
+                        phoneBean.setPhotoBase64(phone.getPhotoBase64());
+                        Phone oldPhone = DataSupport.find(Phone.class, phone.getId());
+                        if (oldPhone != null) {
+
+
+                            int update = phoneBean.update(phone.getId());
+                        }else{
+
+                            boolean save = phoneBean.save();
+                            if(save){
+
+                            }
+                        }
+                    }
+                    refresh(null);
+                } catch (Exception e) {
+
+                    showToast("解析失败");
+                }
+
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
